@@ -1,6 +1,6 @@
 # Notebook lessons — Claude Code harness, in 5 steps
 
-These six Jupyter notebooks consolidate the 20 progressive sessions in this repo into a 5-lesson, hands-on curriculum. They use the **OpenAI SDK pointed at the GitHub Models endpoint**, authenticated via GitHub CLI — no Anthropic key needed. They run on Windows, macOS, and Linux.
+These six Jupyter notebooks consolidate the 20 progressive sessions in this repo into a 5-lesson, hands-on curriculum. They use the **OpenAI SDK pointed at [Agent Maestro](https://github.com/Joouis/agent-maestro)'s local endpoint** — a VS Code extension that proxies VS Code's Language Model API, so no Anthropic key needed. They run on Windows, macOS, and Linux.
 
 The original `s01_*` through `s20_*` Python files are unchanged and remain the reference implementation; these notebooks are a guided tour through the same ideas.
 
@@ -8,7 +8,7 @@ The original `s01_*` through `s20_*` Python files are unchanged and remain the r
 
 | File | Covers source sessions | What you'll learn |
 |---|---|---|
-| `00_setup.ipynb` | — | Install deps, configure `GITHUB_TOKEN`, prove the API works |
+| `00_setup.ipynb` | — | Install deps, connect to Agent Maestro, prove the API works |
 | `01_foundations.ipynb` | s01, s02, s03 | Agent loop, tool dispatch, permissions |
 | `02_extending_the_loop.ipynb` | s04, s05, s07, s10 | Hooks, TodoWrite, skills, dynamic system prompt |
 | `03_memory_and_context.ipynb` | s06, s08, s09, s11 | Subagents, compaction, persistent memory, error recovery |
@@ -25,7 +25,7 @@ pip install -r requirements.txt openai jupyter
 jupyter lab notebooks/
 ```
 
-Open `00_setup.ipynb` and run every cell top-to-bottom. You'll be prompted to authorize via GitHub on first run. After that, do the lessons in order — each one builds on the previous.
+Open `00_setup.ipynb` and run every cell top-to-bottom. Make sure the **Agent Maestro** VS Code extension is installed and its API server is running first. After that, do the lessons in order — each one builds on the previous.
 
 ## Platform support
 
@@ -33,23 +33,21 @@ The lessons run on **Windows, macOS, and Linux**. The `bash` tool dispatches via
 
 If you'd rather always run a real bash, install [Git Bash](https://gitforwindows.org/) and launch Jupyter from inside it.
 
-## Authentication
+## Setup
 
-The notebooks use [GitHub CLI](https://cli.github.com/) for auth.
+The notebooks talk to a local, OpenAI-compatible endpoint served by [Agent Maestro](https://github.com/Joouis/agent-maestro).
 
-### Setup
-```bash
-gh auth login    # one-time setup
-```
+### One-time setup
+1. Install the **Agent Maestro** extension in VS Code.
+2. It auto-starts its API server on startup (default `http://localhost:23333`). You can also run `Agent Maestro: Start API Server` from the Command Palette.
 
-### Auth flow
-1. **Cached token**: if a valid token exists at `~/.claude/gh_models_token.json`, it's reused.
-2. **GitHub CLI**: otherwise, `gh auth token` is invoked and the result is cached for 1 hour.
+### How it works
+- The shared client points the OpenAI SDK at `http://localhost:23333/api/openai/v1`.
+- Auth is **disabled by default** for local development, so no token is needed.
+- Models come from VS Code's Language Model API — list what yours exposes via `GET http://localhost:23333/api/v1/lm/chatModels`, and set `DEFAULT_MODEL` in `llm_client.py` accordingly.
 
-The cache file is written with `chmod 0o600`. `gh` handles its own token refresh, so subsequent cache misses just re-fetch from `gh`.
+## Why Agent Maestro?
 
-## Why GitHub Models?
-
-The mechanisms taught in these notebooks (loop shape, tool dispatch, hooks, memory, subagents, etc.) are **provider-independent** — they're harness engineering, not prompt engineering. Using GitHub Models lets you run every lesson locally with **GitHub CLI auth** (no static credentials).
+The mechanisms taught in these notebooks (loop shape, tool dispatch, hooks, memory, subagents, etc.) are **provider-independent** — they're harness engineering, not prompt engineering. Pointing at Agent Maestro lets you run every lesson locally against whatever models your VS Code already has, with no static credentials.
 
 If you want to swap in the real Anthropic SDK, only `llm_client.py` and the request-shape details need to change.
